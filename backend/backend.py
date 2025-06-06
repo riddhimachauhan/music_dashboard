@@ -2,10 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
-import os
 
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
 
 ARTISTS = [
     {"label": "Ed Sheeran", "id": 3648},
@@ -510,4 +507,7 @@ def home():
     return "Backend is running!"
 
 if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
     app.run(port=5000, debug=True)
