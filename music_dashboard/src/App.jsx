@@ -26,7 +26,7 @@ const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
 
 function App() {
-  // State for filters
+  
   const [tracks, setTracks] = useState([]);
   const [filteredTracks, setFilteredTracks] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);
@@ -44,7 +44,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
-  // Handlers for autocomplete input
+ 
   const handleArtistInputChange = (event, value) => {
     if (value) {
       fetch(`http://localhost:5000/api/artists?search=${encodeURIComponent(value)}`)
@@ -81,7 +81,7 @@ function App() {
     }
   };
 
-  // Fetch tracks when filters change
+  
   useEffect(() => {
     if (releaseDateOption !== "All Time") return;
     const fetchTracks = async () => {
@@ -134,7 +134,7 @@ function App() {
     releaseDateOption,
   ]);
 
-  // Fetch tracks by release date
+ 
   useEffect(() => {
     if (releaseDateOption === "All Time") return;
     setLoading(true);
@@ -155,7 +155,7 @@ function App() {
       });
   }, [releaseDateOption, sortKey, sortOrder]);
 
-  // Filter tracks by release date
+
   useEffect(() => {
     let filtered = tracks;
     if (releaseDate) {
@@ -166,7 +166,7 @@ function App() {
 
   const releaseDates = [...new Set(tracks.map((t) => t.release_date))];
 
-  // Modal style
+  
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -187,7 +187,7 @@ function App() {
       <h1>Top 50 Tracks</h1>
 
       <div className="controls" style={{ gap: 24 }}>
-        {/* Filter Button */}
+        {}
         <Button
           variant="contained"
           color="primary"
@@ -196,7 +196,7 @@ function App() {
           Filter
         </Button>
 
-        {/* Artist Autocomplete */}
+        {}
         <Autocomplete
           options={artistOptions}
           getOptionLabel={(option) => option.label || option.name}
@@ -221,7 +221,7 @@ function App() {
           <option value="All Time">All Time</option>
         </select>
 
-        {/* Sort Options */}
+        {}
         <select
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value)}
@@ -242,7 +242,7 @@ function App() {
         </button>
       </div>
 
-      {/* Filter Modal */}
+      {}
       <Modal open={filterModalOpen} onClose={() => setFilterModalOpen(false)}>
         <div style={modalStyle}>
           <h2>Filter Tracks</h2>
@@ -250,8 +250,8 @@ function App() {
   multiple
   options={moodOptions}
   value={selectedMoods}
-  isOptionEqualToValue={(option, value) => option.id === value.id}  // Important for object equality
-  getOptionLabel={(option) => option.label || option.name || ""}  // Display the label or name property
+  isOptionEqualToValue={(option, value) => option.id === value.id}  
+  getOptionLabel={(option) => option.label || option.name || ""}  
   onChange={(event, newValue) => setSelectedMoods(newValue)}
   onInputChange={handleMoodInputChange}
   renderOption={(props, option, { selected }) => (
@@ -297,7 +297,7 @@ function App() {
   )}
 />
 
-          {/* Genres */}
+          {}
           <Autocomplete
             multiple
             options={genreOptions}
@@ -331,7 +331,7 @@ function App() {
         </div>
       </Modal>
 
-      {/* Track Table */}
+      {}
       {loading ? (
         <div style={{ marginTop: 32 }}>Loading tracks...</div>
       ) : (
