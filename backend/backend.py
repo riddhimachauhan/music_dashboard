@@ -42,6 +42,20 @@ ARTISTS = [
     {"label": "Sonu Nigam", "id": 108808}
 ]
 
+MOODS = [
+    {"label": "celebratory", "id": 504927},
+    {"label": "fun", "id": 504978},
+    {"label": "affectionate", "id": 504909},
+]
+
+ACTIVITIES = [
+    {"label": "partying", "id": 504876},
+    {"label": "dancy", "id": 504872},
+    {"label": "drinking", "id": 504886},
+    {"label": "urban", "id": 504878},
+]
+
+
 
 
 app = Flask(__name__)
@@ -55,9 +69,24 @@ def refresh_access_token(refresh_token=REFRESH_TOKEN):
     headers = {"Content-Type": "application/json"}
     data = {"refreshtoken": refresh_token}
     response = requests.post(url, json=data, headers=headers)
+
+    print("=== TOKEN DEBUG ===")
+    print("Status Code:", response.status_code)
+    print("Token Response:", response.text)
+
     if response.status_code == 200:
         return response.json().get('token')
     return None
+def extract_artist_name(t):
+    artist = ""
+    if "artist" in t and t["artist"]:
+        artist = t["artist"][0].get("name", "")
+    elif "artist_names" in t and t["artist_names"]:
+        artist = t["artist_names"][0]
+    elif "artists" in t and t["artists"]:
+        artist = t["artists"][0].get("name", "")
+    return artist
+
 
 def fetch_top_tracks(api_token, params):
     url = "https://api.chartmetric.com/api/charts/spotify"
@@ -85,12 +114,13 @@ def get_artists_api():
     return jsonify(filtered)
 
 
-def fetch_tracks_by_genre(api_token, genre_id, limit=50):
+def fetch_tracks_by_genre(api_token, genre_id, sort_column="score", sort_order_desc=True, limit=50):
     url = "https://api.chartmetric.com/api/track/list/filter"
     headers = {"Authorization": f"Bearer {api_token}"}
     params = [
         ("genres[]", genre_id),
-        ("sortColumn", "score"),
+        ("sortColumn", sort_column),
+        ("sortOrderDesc", str(sort_order_desc).lower()),  # "true" or "false"
         ("limit", str(limit))
     ]
     response = requests.get(url, headers=headers, params=params)
@@ -99,6 +129,135 @@ def fetch_tracks_by_genre(api_token, genre_id, limit=50):
     else:
         print("Error fetching tracks:", response.status_code, response.text)
         return []
+
+def get_moods(api_token):
+    url = "https://api.chartmetric.com/api/mood"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get('obj', [])
+    else:
+        print("Error fetching moods:", response.status_code, response.text)
+        return []
+
+def get_activities(api_token):
+    url = "https://api.chartmetric.com/api/activity"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get('obj', [])
+    else:
+        print("Error fetching activities:", response.status_code, response.text)
+        return []
+@app.route("/api/moods", methods=["GET"])
+def get_moods_api():
+    search = request.args.get("search", "").lower()
+    if search:
+        filtered = [m for m in MOODS if search in m["label"].lower()]
+    else:
+        filtered = MOODS
+    return jsonify(filtered)
+
+@app.route("/api/activities", methods=["GET"])
+def get_activities_api():
+    search = request.args.get("search", "").lower()
+    if search:
+        filtered = [a for a in ACTIVITIES if search in a["label"].lower()]
+    else:
+        filtered = ACTIVITIES
+    return jsonify(filtered)
+
+
+@app.route("/api/tracks-by-mood", methods=["GET"])
+def get_tracks_by_mood_api():
+    mood_id = request.args.get("mood_id", "")
+    sort_column = request.args.get("sortColumn", "score")
+    sort_order_desc = request.args.get("sortOrderDesc", "true").lower() == "true"
+    if not mood_id:
+        return jsonify([])
+    api_token = refresh_access_token()
+    if not api_token:
+        return jsonify([])
+    url = "https://api.chartmetric.com/api/track/list/filter"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    params = [
+        ("moods[]", mood_id),
+        ("sortColumn", sort_column),
+        ("limit", "50"),
+        ("sortOrderDesc", str(sort_order_desc).lower()),
+    ]
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        tracks = []
+        for t in data.get("obj", []):
+            artist = extract_artist_name(t)
+            release_date = ""
+            if "release_dates" in t and t["release_dates"]:
+                release_date = t["release_dates"][0][:10]
+            elif "album" in t and t["album"]:
+                release_date = t["album"][0].get("release_date", "")[:10]
+            latest = t.get("latest", {})
+            tracks.append({
+                "track": t.get("name", ""),
+                "artist": artist,
+                "release_date": release_date,
+                "streams": latest.get("spotify_plays", t.get("plays", t.get("score", 0))),
+                "playlist_count": latest.get("spotify_playlist_count"),
+                "popularity": latest.get("spotify_popularity"),
+                "playlist_reach": latest.get("spotify_playlist_total_reach"),
+                "score": t.get("score", 0),
+            })
+        return jsonify(tracks)
+    else:
+        print("Error fetching tracks:", response.status_code, response.text)
+        return jsonify([])
+
+@app.route("/api/tracks-by-activity", methods=["GET"])
+def get_tracks_by_activity_api():
+    activity_id = request.args.get("activity_id", "")
+    sort_column = request.args.get("sortColumn", "score")
+    sort_order_desc = request.args.get("sortOrderDesc", "true").lower() == "true"
+    if not activity_id:
+        return jsonify([])
+    api_token = refresh_access_token()
+    if not api_token:
+        return jsonify([])
+    url = "https://api.chartmetric.com/api/track/list/filter"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    params = [
+        ("activities[]", activity_id),
+        ("sortColumn", sort_column),
+        ("limit", "50"),
+        ("sortOrderDesc", str(sort_order_desc).lower()),
+    ]
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        tracks = []
+        for t in data.get("obj", []):
+            artist = extract_artist_name(t)
+            release_date = ""
+            if "release_dates" in t and t["release_dates"]:
+                release_date = t["release_dates"][0][:10]
+            elif "album" in t and t["album"]:
+                release_date = t["album"][0].get("release_date", "")[:10]
+            latest = t.get("latest", {})
+            tracks.append({
+                "track": t.get("name", ""),
+                "artist": artist,
+                "release_date": release_date,
+                "streams": latest.get("spotify_plays", t.get("plays", t.get("score", 0))),
+                "playlist_count": latest.get("spotify_playlist_count"),
+                "popularity": latest.get("spotify_popularity"),
+                "playlist_reach": latest.get("spotify_playlist_total_reach"),
+                "score": t.get("score", 0),
+            })
+        return jsonify(tracks)
+    else:
+        print("Error fetching tracks:", response.status_code, response.text)
+        return jsonify([])
+
 
 
 @app.route("/api/top-tracks", methods=["GET"])
@@ -147,6 +306,8 @@ def get_genres_api():
 @app.route("/api/tracks-by-genres", methods=["GET"])
 def get_tracks_by_genres_api():
     genre_ids = request.args.get("genre_ids", "")
+    sort_column = request.args.get("sortColumn", "score")
+    sort_order_desc = request.args.get("sortOrderDesc", "true").lower() == "true"
     if not genre_ids:
         return jsonify([])
     genre_id_list = [gid for gid in genre_ids.split(",") if gid]
@@ -155,22 +316,15 @@ def get_tracks_by_genres_api():
         return jsonify([])
     all_tracks = []
     for gid in genre_id_list:
-        track_data = fetch_tracks_by_genre(api_token, gid)
+        track_data = fetch_tracks_by_genre(api_token, gid, sort_column, sort_order_desc)
         if track_data and track_data.get("obj"):
             for t in track_data["obj"]:
-                # Robustly extract artist name
-                artist = ""
-                if "artist_names" in t and t["artist_names"]:
-                    artist = t["artist_names"][0]
-                elif "artists" in t and t["artists"]:
-                    artist = t["artists"][0].get("name", "")
-                # Robustly extract release date
+                artist = extract_artist_name(t)
                 release_date = ""
                 if "release_dates" in t and t["release_dates"]:
                     release_date = t["release_dates"][0][:10]
                 elif "album" in t and t["album"]:
                     release_date = t["album"][0].get("release_date", "")[:10]
-                # Streams/score
                 streams = t.get("plays", t.get("score", 0))
                 track = {
                     "track": t.get("name", ""),
@@ -179,18 +333,18 @@ def get_tracks_by_genres_api():
                     "streams": streams
                 }
                 all_tracks.append(track)
-    # Deduplicate by track name (keep the highest streams/score)
     track_map = {}
     for t in all_tracks:
         name = t["track"]
         if name not in track_map or t["streams"] > track_map[name]["streams"]:
             track_map[name] = t
-    # Sort by streams/score descending
     sorted_tracks = sorted(track_map.values(), key=lambda t: t["streams"], reverse=True)
     return jsonify(sorted_tracks[:50])
 @app.route("/api/tracks-by-artist", methods=["GET"])
 def get_tracks_by_artist_api():
     artist_id = request.args.get("artist_id", "")
+    sort_column = request.args.get("sortColumn", "score")
+    sort_order_desc = request.args.get("sortOrderDesc", "true").lower() == "true"
     if not artist_id:
         return jsonify([])
     api_token = refresh_access_token()
@@ -200,33 +354,144 @@ def get_tracks_by_artist_api():
     headers = {"Authorization": f"Bearer {api_token}"}
     params = [
         ("artists[]", artist_id),
-        ("sortColumn", "score"),
+        ("sortColumn", sort_column),
         ("limit", "50"),
-        ("sortOrderDesc", "true"),
+        ("sortOrderDesc", str(sort_order_desc).lower()),
     ]
     response = requests.get(url, headers=headers, params=params)
     if response.status_code == 200:
         data = response.json()
         tracks = []
         for t in data.get("obj", []):
-            # Robustly extract artist name
-            artist = ""
-            if "artist_names" in t and t["artist_names"]:
-                artist = t["artist_names"][0]
-            elif "artists" in t and t["artists"]:
-                artist = t["artists"][0].get("name", "")
-            
+            artist = extract_artist_name(t)
             release_date = ""
             if "release_dates" in t and t["release_dates"]:
                 release_date = t["release_dates"][0][:10]
             elif "album" in t and t["album"]:
                 release_date = t["album"][0].get("release_date", "")[:10]
-            streams = t.get("plays", t.get("score", 0))
+            latest = t.get("latest", {})
             tracks.append({
                 "track": t.get("name", ""),
                 "artist": artist,
                 "release_date": release_date,
-                "streams": streams
+                "streams": latest.get("spotify_plays", t.get("plays", t.get("score", 0))),
+                "playlist_count": latest.get("spotify_playlist_count"),
+                "popularity": latest.get("spotify_popularity"),
+                "playlist_reach": latest.get("spotify_playlist_total_reach"),
+                "score": t.get("score", 0),
+            })
+        return jsonify(tracks)
+    else:
+        print("Error fetching tracks:", response.status_code, response.text)
+        return jsonify([])
+
+@app.route("/api/tracks-by-filters", methods=["GET"])
+def get_tracks_by_filters():
+    genre_ids = request.args.get("genre_ids", "")
+    artist_id = request.args.get("artist_id", "")
+    mood_ids = request.args.get("mood_ids", "")
+    activity_ids = request.args.get("activity_ids", "")
+    sort_column = request.args.get("sortColumn", "score")
+    sort_order_desc = request.args.get("sortOrderDesc", "true").lower() == "true"
+    api_token = refresh_access_token()
+    if not api_token:
+        return jsonify([])
+
+    url = "https://api.chartmetric.com/api/track/list/filter"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    params = []
+
+    if genre_ids:
+        for gid in genre_ids.split(","):
+            params.append(("genres[]", gid))
+    if mood_ids:
+        for mid in mood_ids.split(","):
+            params.append(("moods[]", mid))
+    if activity_ids:
+        for aid in activity_ids.split(","):
+            params.append(("activities[]", aid))
+    if artist_id:
+        params.append(("artists[]", artist_id))
+    params.extend([
+        ("sortColumn", sort_column),
+        ("limit", "50"),
+        ("sortOrderDesc", str(sort_order_desc).lower()),
+    ])
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        tracks = []
+        for t in data.get("obj", []):
+            artist = extract_artist_name(t)
+            release_date = ""
+            if "release_dates" in t and t["release_dates"]:
+                release_date = t["release_dates"][0][:10]
+            elif "album" in t and t["album"]:
+                release_date = t["album"][0].get("release_date", "")[:10]
+            latest = t.get("latest", {})
+            tracks.append({
+                "track": t.get("name", ""),
+                "artist": artist,
+                "release_date": release_date,
+                "streams": latest.get("spotify_plays", t.get("plays", t.get("score", 0))),
+                "playlist_count": latest.get("spotify_playlist_count"),
+                "popularity": latest.get("spotify_popularity"),
+                "playlist_reach": latest.get("spotify_playlist_total_reach"),
+                "score": t.get("score", 0),
+            })
+        return jsonify(tracks)
+    else:
+        print("Error fetching tracks:", response.status_code, response.text)
+        return jsonify([])
+
+
+@app.route("/api/tracks-by-release-date", methods=["GET"])
+def get_tracks_by_release_date():
+    filter_option = request.args.get("filter_option", "")
+    sort_column = request.args.get("sortColumn", "score")
+    sort_order_desc = request.args.get("sortOrderDesc", "true").lower() == "true"
+    api_token = refresh_access_token()
+    if not api_token:
+        return jsonify([])
+    end_date = datetime.today()
+    if filter_option == "Last 1 Week":
+        start_date = end_date - timedelta(days=7)
+    elif filter_option == "Last 1 Month":
+        start_date = end_date - timedelta(days=30)
+    elif filter_option == "Last 1 Year":
+        start_date = end_date - timedelta(days=365)
+    else:
+        start_date = end_date - timedelta(days=7)
+    url = "https://api.chartmetric.com/api/track/list/filter"
+    headers = {"Authorization": f"Bearer {api_token}"}
+    params = [
+        ("min_release_date", start_date.strftime('%Y-%m-%d')),
+        ("max_release_date", end_date.strftime('%Y-%m-%d')),
+        ("sortColumn", sort_column),
+        ("limit", "50"),
+        ("sortOrderDesc", str(sort_order_desc).lower()),
+    ]
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        tracks = []
+        for t in data.get("obj", []):
+            artist = extract_artist_name(t)
+            release_date = ""
+            if "release_dates" in t and t["release_dates"]:
+                release_date = t["release_dates"][0][:10]
+            elif "album" in t and t["album"]:
+                release_date = t["album"][0].get("release_date", "")[:10]
+            latest = t.get("latest", {})
+            tracks.append({
+                "track": t.get("name", ""),
+                "artist": artist,
+                "release_date": release_date,
+                "streams": latest.get("spotify_plays", t.get("plays", t.get("score", 0))),
+                "playlist_count": latest.get("spotify_playlist_count"),
+                "popularity": latest.get("spotify_popularity"),
+                "playlist_reach": latest.get("spotify_playlist_total_reach"),
+                "score": t.get("score", 0),
             })
         return jsonify(tracks)
     else:
