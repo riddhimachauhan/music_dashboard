@@ -280,8 +280,8 @@ def get_top_tracks():
     tracks = []
     for t in raw_tracks[:50]:
         tracks.append({
-            "track": t.get("name", ""),  # Song name
-            "artist": t.get("artist_names", [""])[0],  # First artist name
+            "track": t.get("name", ""),  
+            "artist": t.get("artist_names", [""])[0], 
             "release_date": (t.get("release_dates", [""])[0][:10] if t.get("release_dates") else ""),
             "streams": t.get("plays", 0),
             "playlist_count": t.get("playlist_count", 0),
