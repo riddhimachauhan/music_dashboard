@@ -1,3 +1,6 @@
+const baseUrl = import.meta.env.VITE_BACKEND_URL;
+fetch(`${baseUrl}/api/tracks`)
+
 import React, { useEffect, useState } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
