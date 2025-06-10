@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 import requests
 from datetime import datetime, timedelta
+app = Flask(__name__)
+CORS(app)  
 from flask_cors import CORS
 CORS(app, origins=["https://music-dashboard-three-woad.vercel.app/"])
 
@@ -60,8 +62,7 @@ ACTIVITIES = [
 
 
 
-app = Flask(__name__)
-CORS(app)  
+
 
 
 REFRESH_TOKEN = "CdbzEeHvYZKK372srNTsHTuHK1kdexWeChihqXtFwQDHMyH8X4zkL9BDUUNtMs7n"
