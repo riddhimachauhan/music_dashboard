@@ -1,7 +1,9 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
+from flask_cors import CORS
+CORS(app, origins=["https://music-dashboard-three-woad.vercel.app/"])
+
 ARTISTS = [
     {"label": "Ed Sheeran", "id": 3648},
     {"label": "The Weeknd", "id": 3852},
