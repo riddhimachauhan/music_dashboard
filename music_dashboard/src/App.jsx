@@ -113,7 +113,7 @@ function App() {
           selectedActivities.length > 0 ||
           selectedArtist
         ) {
-          url = "${import.meta.env.VITE_BACKEND_URL}/api/tracks-by-filters?" + params.join("&");
+          url = import.meta.env.VITE_BACKEND_URL + "/api/tracks-by-filters?" + params.join("&");
         } else {
           url = `${import.meta.env.VITE_BACKEND_URL}/api/top-tracks?order=${sortOrder}`;
         }
