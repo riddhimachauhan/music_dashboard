@@ -50,7 +50,7 @@ function App() {
   
   const handleArtistInputChange = (event, value) => {
     if (value) {
-      fetch(`http://localhost:5000/api/artists?search=${encodeURIComponent(value)}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/artists?search=${encodeURIComponent(value)}`)
         .then(res => res.json())
         .then(data => setArtistOptions(data))
         .catch(err => console.error(err));
@@ -59,7 +59,7 @@ function App() {
 
   const handleGenreInputChange = (event, value) => {
     if (value) {
-      fetch(`http://localhost:5000/api/genres?search=${encodeURIComponent(value)}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/genres?search=${encodeURIComponent(value)}`)
         .then(res => res.json())
         .then(data => setGenreOptions(data))
         .catch(err => console.error(err));
@@ -68,7 +68,7 @@ function App() {
 
   const handleMoodInputChange = (event, value) => {
     if (value) {
-      fetch(`http://localhost:5000/api/moods?search=${encodeURIComponent(value)}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/moods?search=${encodeURIComponent(value)}`)
         .then(res => res.json())
         .then(data => setMoodOptions(data))
         .catch(err => console.error(err));
@@ -77,7 +77,7 @@ function App() {
 
   const handleActivityInputChange = (event, value) => {
     if (value) {
-      fetch(`http://localhost:5000/api/activities?search=${encodeURIComponent(value)}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/activities?search=${encodeURIComponent(value)}`)
         .then(res => res.json())
         .then(data => setActivityOptions(data))
         .catch(err => console.error(err));
@@ -113,9 +113,9 @@ function App() {
           selectedActivities.length > 0 ||
           selectedArtist
         ) {
-          url = "http://localhost:5000/api/tracks-by-filters?" + params.join("&");
+          url = "${import.meta.env.VITE_BACKEND_URL}/api/tracks-by-filters?" + params.join("&");
         } else {
-          url = `http://localhost:5000/api/top-tracks?order=${sortOrder}`;
+          url = `${import.meta.env.VITE_BACKEND_URL}/api/top-tracks?order=${sortOrder}`;
         }
         const res = await fetch(url);
         const data = await res.json();
@@ -142,7 +142,7 @@ function App() {
     if (releaseDateOption === "All Time") return;
     setLoading(true);
     fetch(
-      `http://localhost:5000/api/tracks-by-release-date?filter_option=${encodeURIComponent(
+      `${import.meta.env.VITE_BACKEND_URL}/api/tracks-by-release-date?filter_option=${encodeURIComponent(
         releaseDateOption
       )}&sortColumn=${sortKey}&sortOrderDesc=${sortOrder === "desc"}`
     )
