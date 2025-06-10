@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, request
 import requests
 from datetime import datetime, timedelta
+from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  
-from flask_cors import CORS
+
 CORS(app, origins=["https://music-dashboard-three-woad.vercel.app/"])
 
 ARTISTS = [
