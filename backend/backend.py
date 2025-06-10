@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  
+CORS(app, origins=["https://music-dashboard-three-woad.vercel.app"])
 
-CORS(app, origins=["https://music-dashboard-three-woad.vercel.app/"])
 
 ARTISTS = [
     {"label": "Ed Sheeran", "id": 3648},
