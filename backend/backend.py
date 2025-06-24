@@ -66,7 +66,7 @@ ACTIVITIES = [
 
 
 
-REFRESH_TOKEN = "CdbzEeHvYZKK372srNTsHTuHK1kdexWeChihqXtFwQDHMyH8X4zkL9BDUUNtMs7n"
+REFRESH_TOKEN = "xWfzKOpi3LwWdt8uirHzlJ38t8i6GaGI0GEN6JDKnYVmYiE84h1p3FedCuDmj2Mw"
 
 def refresh_access_token(refresh_token=REFRESH_TOKEN):
     url = "https://api.chartmetric.com/api/token"
